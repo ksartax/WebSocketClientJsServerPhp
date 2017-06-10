@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <style>
+    .row.content {height: 1000px}
+
+    .sidenav {
+      background-color: #f1f1f1;
+      height: 100%;
+    }
+
+    footer {
+      background-color: #555;
+      color: white;
+      padding: 15px;
+    }
+
+    @media screen and (max-width: 767px) {
+      .sidenav {
+        height: auto;
+        padding: 15px;
+      }
+      .row.content {height: auto;}
+    }
+  </style>
+
+  </head>
+  <body>
+      <div class="container-fluid">
+        <div class="row content">
+          <div class="col-sm-3 sidenav">
+
+            <div class="well">
+              <h4>Czat <span>
+                <button style="display: none" id="active-czat" class="btn btn-success">Aktywny</button>
+                <button id="de-active-czat"  class="btn btn-danger">Nie Aktywny</button>
+                <button type="button" id="close" class="btn btn-warning">X</button>
+              </span> </h4>
+            </div>
+
+            <hr>
+
+            <center>
+              <div class="well">
+                <div style="width: 200px" class="form-group">
+                  <label for="usr">Nick:</label>
+                  <input type="text" class="form-control" id="nick">
+                </div>
+                <button class="btn btn-success" id="connect-button"> Połącz </button>
+              </div>
+            </center>
+
+            <hr>
+
+            <center>
+              <div class="well">
+                <h4>Osoby</h4>
+                <div id="users-nick-container">
+
+                </div>
+              </div>
+            </center>
+
+          </div>
+
+          <div class="col-sm-9">
+            <hr>
+
+
+            <div id="comment" class="well"></div>
+
+
+            <h4>Napisz</h4>
+
+              <div class="form-group">
+                <textarea class="form-control" rows="3" required></textarea>
+              </div>
+
+              <button id="send" class="btn btn-success">Wyslij</button>
+
+              <br><br>
+
+            </div>
+          </div>
+        </div>
+
+        <footer class="container-fluid">
+          <p>Mini Czat</p>
+        </footer>
+      </body>
+      </html>
+
+<script type="text/javascript">
+
+var socket;
+
+function start() {
+
+    var host = "ws://127.0.0.1:9000/";
+    socket = new WebSocket(host);
+
+    socket.onopen = function(msg) {
+        $("#de-active-czat").css("display", "none");
+        $("#active-czat").css("display", "");
+        socket.send("!nick=" + $("#nick").val());
+    };
+
+    $("#send").on('click', function() {
+      console.log("Send");
+      socket.send(JSON.stringify($("textarea").val()));
+    })
+
+    socket.onclose = function()  {
+        $("#de-active-czat").css("display", "");
+        $("#active-czat").css("display", "none");
+    };
+
+    socket.onmessage = function(msg) {
+      var pjson = JSON.parse(msg.data);
+      console.log(pjson);
+
+      var htmlUser = "";
+      $("#users-nick-container").find("span").remove();
+      for(var i = 0; i<pjson.usersAll.count; i++){
+          htmlUser = "<span> Nick : "+ pjson.usersAll.users[i].nick +" <br/> </span> ";
+          $("#users-nick-container").append(htmlUser);
+      }
+
+      var html = "<div> <h2> Nick : " + pjson.name + " </h2> <h5> <span class='glyphicon glyphicon-time'> " + pjson.date + " </span> </h5> <p> " + pjson.message + " </p> <br/> <br/> <hr> </div>";
+        $("#comment").append(html);
+    };
+
+}
+
+$("#connect-button").on('click', function() {
+  start();
+})
+
+$("#close").on('click', function() {
+  socket.send('disconnect');
+  socket.close();
+});
+
+
+</script>
